@@ -227,6 +227,7 @@ func propfind(w http.ResponseWriter, r *http.Request) {
 		buf.WriteTo(w)                                    //flush it to the client.
 	} else {
 		dirname, err := filepath.Abs(filepath.Clean(basedir + requestpath))
+		
 		if err != nil {
 			printlnstderr(err)
 			panic(sendHTTPStatus(http.StatusBadRequest))
@@ -258,14 +259,23 @@ func propfind(w http.ResponseWriter, r *http.Request) {
 `)) //Write the preamble
 
 		for _, fi := range fi {
-
+			tmp:=fi
 			fname := fi.Name()
 			fsize := fi.Size()
 			ftime := fi.ModTime()
+			isDir :=fi.IsDir()
 			fcreationtime := ftime.Format(time.RFC3339) //2012-12-15T08:31:00Z
 			fmodtime := ftime.Format(time.RFC1123)      //Wed, 12 Dec 2012 15:30:23 GMT
+			
+			if (fi.Mode()&os.ModeSymlink)!=0 {//means we have a symlink				
+				tmpname,_:=filepath.EvalSymlinks(dirname+string(os.PathSeparator)+fi.Name())
+        tmp,_=os.Lstat(tmpname)
+        fsize=tmp.Size()
+        ftime=tmp.ModTime()
+        isDir=tmp.IsDir()
+			}
 
-			if !fi.IsDir() {
+			if !isDir {
 				printlndebug(fi.Name(), fi.Size(), "bytes ", fmodtime)
 
 				buf.Write([]byte(`<D:response>
