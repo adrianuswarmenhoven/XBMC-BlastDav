@@ -184,6 +184,15 @@ func headget(w http.ResponseWriter, r *http.Request) {
 		}
 		panic(sendHTTPStatus(http.StatusNotFound))
 	}
+  filename, err = filepath.EvalSymlinks(filename)
+	printlndebug(filename)
+	printlndebug("-----------------------------")
+	if err != nil {
+		if verbose {
+			printlnstderr(err)
+		}
+		panic(sendHTTPStatus(http.StatusNotFound))
+	}  
 	file, err := os.Open(filename)
 	defer file.Close()
 	if err != nil {
@@ -222,6 +231,11 @@ func propfind(w http.ResponseWriter, r *http.Request) {
 			printlnstderr(err)
 			panic(sendHTTPStatus(http.StatusBadRequest))
 		}
+		dirname,err=filepath.EvalSymlinks(dirname)
+		if err != nil {
+			printlnstderr(err)
+			panic(sendHTTPStatus(http.StatusBadRequest))
+		}		
 		d, err := os.Open(dirname)
 		defer d.Close()
 		if err != nil {
